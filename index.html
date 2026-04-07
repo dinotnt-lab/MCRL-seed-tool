@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seed Parser</title>
+    <style>
+    .filters {
+        display: flex;
+        justify-content: space-between;
+        width: 500px;
+        gap: 40px;
+    }
+
+    .left, .right {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .row input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .row label {
+        margin: 0;
+    }
+
+    table {
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 5px 10px;
+        border: 1px solid black;
+        text-align: left;
+    }
+
+    th {
+        font-weight: bold;
+    }
+    .top {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    .side {
+        display: flex;
+        flex-direction: column;
+    }
+    .info {
+        margin: 3px;
+    }
+    </style>
+</head>
+<body>
+    <h1>MCRL Seed finder</h1>
+
+    <div class="top">
+        <textarea id="seedinp" placeholder="Paste seeds here" rows="15" cols="40"></textarea>
+
+        <div class="side">
+            <h2 class="info"><b>How To Use</b></h2>
+            <p class="info">1. Go to the <a href='https://docs.google.com/spreadsheets/d/1fnLYghWg9-1pWH8eTw4TwQxqeD5yVf9ZXZccmClORSU' target='_blank'>seed google sheet</a></p>
+            <p class="info">2. Go to the "Seed Tracker" page</p>
+            <p class="info">3. Control + A and copy</p>
+            <p class="info">4. Paste in the text area</p>
+        </div>
+    </div>
+    <button onclick="run()" style="margin-top: 10px; margin-bottom: 10px;">Run</button>
+
+    <div class="filters">
+        <div class="left">
+            <div class="row">
+                <input type="checkbox" id="allow-village" checked>
+                <label for="allow-village">Allow Village</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="allow-temple" checked>
+                <label for="allow-temple">Allow Temple</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="allow-ruinedportal" checked>
+                <label for="allow-ruinedportal">Allow Ruined Portal</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="allow-buried-treasure" checked>
+                <label for="allow-buried-treasure">Allow Buried Treasure</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="allow-shipwreck" checked>
+                <label for="allow-shipwreck">Allow Shipwreck</label>
+            </div>
+        </div>
+        <div class="right">
+            <div class="row">
+                <input type="checkbox" id="allow-found" checked>
+                <label for="allow-found">Allow Found</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="allow-tested" checked>
+                <label for="allow-tested">Allow Tested</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="allow-played" checked>
+                <label for="allow-played">Allow Played</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" id="choose-random" checked>
+                <label for="choose-random">Choose Random</label>
+            </div>
+        </div>
+    </div>
+
+    <p id="status"></p>
+
+    <div id="output"></div>
+
+<script>
+function run() {
+    const raw = document.getElementById('seedinp').value.split('\n');
+    const status = document.getElementById('status');
+
+    let seeds = [];
+
+    for (let line of raw) {
+        line = line.trim();
+
+        if (line === '') continue;
+        if (line === 'OVERWORLD SEED\tNETHER SEED\tSTATUS\tCOMMENTS') continue;
+
+        const spl = line.split('\t');
+        seeds.push(spl);
+    }
+
+    status.textContent = `Parsed ${seeds.length} seeds.`;
+
+    if (!document.getElementById('allow-found').checked) {
+        seeds = seeds.filter(seed => seed[2] !== 'FOUND');
+    }
+
+    if (!document.getElementById('allow-tested').checked) {
+        seeds = seeds.filter(seed => seed[2] !== 'TESTED');
+    }
+
+    if (!document.getElementById('allow-played').checked) {
+        seeds = seeds.filter(seed => seed[2] !== 'PLAYED');
+    }
+
+    if (!document.getElementById('allow-village').checked) {
+        seeds = seeds.filter(seed => !seed[3].includes('VILLAGE'));
+    }
+
+    if (!document.getElementById('allow-temple').checked) {
+        seeds = seeds.filter(seed => !seed[3].includes('TEMPLE'));
+    }
+
+    if (!document.getElementById('allow-ruinedportal').checked) {
+        seeds = seeds.filter(seed => !seed[3].includes('RUINED_PORTAL'));
+    }
+
+    if (!document.getElementById('allow-buried-treasure').checked) {
+        seeds = seeds.filter(seed => !seed[3].includes('BURIED_TREASURE'));
+    }
+
+    if (!document.getElementById('allow-shipwreck').checked) {
+        seeds = seeds.filter(seed => !seed[3].includes('SHIPWRECK'));
+    }
+
+    let output;
+    if (document.getElementById('choose-random').checked) {
+        output = seeds.length ? [seeds[Math.floor(Math.random() * seeds.length)]] : [];
+    } else {
+        output = seeds;
+    }
+
+    const outputDiv = document.getElementById('output');
+
+    let html = `
+    <table>
+        <tr>
+            <th>Overworld Seed</th>
+            <th>Nether Seed</th>
+            <th>Status</th>
+            <th>Comments</th>
+        </tr>
+    `;
+
+    for (let seed of output) {
+        html += `
+        <tr>
+            <td>${seed[0] ?? ''}</td>
+            <td>${seed[1] ?? ''}</td>
+            <td>${seed[2] ?? ''}</td>
+            <td>${seed[3] ?? ''}</td>
+        </tr>`;
+    }
+
+    html += `</table>`;
+
+    outputDiv.innerHTML = html;
+}
+</script>
+</body>
+</html>
